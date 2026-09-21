@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Inventário de T.I.</title>
+  <link rel="stylesheet" href="/static/styles-public.css">
+</head>
+<body>
+<div id="login" class="login">
+  <form id="loginForm" class="login-card">
+    <div class="login-brand">TI</div>
+    <h1>Inventário de T.I.</h1>
+    <p>Portal interno de gestão de ativos</p>
+    <label>Usuário<input id="username" value="admin" autocomplete="username"></label>
+    <label>Senha<input id="password" type="password" autocomplete="current-password"></label>
+    <button class="primary" type="submit">Entrar</button>
+    <small>Uso interno · equipe de T.I.</small>
+    <div id="loginError" class="error"></div>
+  </form>
+</div>
+
+<div id="app" class="shell hidden">
+  <aside>
+    <div class="brand">
+      <div class="brand-logo">TI</div>
+      <div><strong>Inventário TI</strong><span>Gestão de ativos · V15</span></div>
+    </div>
+    <nav>
+      <button data-view="dashboard" class="active">▦ <span>Visão geral</span></button>
+      <button data-category="COMPUTADOR">▣ <span>Computadores</span></button>
+      <button data-category="IMPRESSORA">▤ <span>Impressoras</span></button>
+      <button data-category="MONITOR">▥ <span>Monitores</span></button>
+      <button data-special="FILIAL">▦ <span>Filiais</span></button>
+      <button data-category="TABLET">▤ <span>Tablets</span></button>
+      <button data-category="QUARENTENA">⚠ <span>Quarentena</span></button>
+      <button data-view="supplies">◫ <span>Suprimentos</span></button>
+      <button data-view="audit">◷ <span>Histórico</span></button>
+      <button data-view="team">♙ <span>Equipe</span></button>
+    </nav>
+    <div class="aside-bottom"><button id="logout">↪ Sair</button></div>
+  </aside>
+
+  <main>
+    <header>
+      <div><h2 id="pageTitle">Visão geral</h2><p id="pageSub">Parque tecnológico da empresa</p></div>
+      <div class="header-actions">
+        <button class="ghost" id="exportBtn">Exportar CSV</button>
+        <button class="primary new-asset-btn" id="newBtn" type="button">＋ Novo ativo</button>
+        <div class="avatar" id="avatar">TI</div>
+      </div>
+    </header>
+    <section id="dashboard" class="view"></section>
+    <section id="assets" class="view hidden">
+      <div class="toolbar">
+        <input id="search" placeholder="Buscar por ID, serial, usuário, modelo, IP...">
+        <select id="catFilter"><option value="">Todas categorias</option></select>
+        <select id="areaFilter"><option value="">Todas áreas</option></select>
+        <select id="statusFilter"><option value="">Todos status</option></select>
+      </div>
+      <div class="table-card"><table><thead id="assetHead"><tr><th>ID do ativo</th><th>Categoria</th><th>Área / usuário</th><th>Marca / modelo</th><th>Serial</th><th>Status</th><th></th></tr></thead><tbody id="assetRows"></tbody></table></div>
+    </section>
+    <section id="supplies" class="view hidden">
+      <div class="table-card"><table><thead><tr><th>Impressora</th><th>Tipo</th><th>Suprimento</th><th>Qtd.</th><th>Mínimo</th><th>Situação</th></tr></thead><tbody id="supplyRows"></tbody></table></div>
+    </section>
+    <section id="audit" class="view hidden">
+      <div class="section-actions"><button class="ghost" id="refreshAudit">Atualizar histórico</button><button class="ghost" id="backupBtn">Criar backup agora</button></div>
+      <div class="table-card"><table><thead><tr><th>Data</th><th>Usuário</th><th>Ação</th><th>Tipo</th><th>Detalhes</th></tr></thead><tbody id="auditRows"></tbody></table></div>
+      <div class="card backups-card"><h3>Backups recentes</h3><div id="backupList" class="backup-list"></div></div>
+    </section>
+    <section id="team" class="view hidden">
+      <div class="team-grid">
+        <div class="card">
+          <h3>Equipe de T.I.</h3>
+          <p class="muted-copy">Todos os usuários têm o mesmo nível de acesso. Use contas individuais para o histórico registrar corretamente quem fez cada alteração.</p>
+          <div id="teamList" class="team-list"></div>
+        </div>
+        <form id="userForm" class="card user-form">
+          <h3>Adicionar usuário</h3>
+          <label>Nome<input id="newDisplayName" placeholder="Ex.: Gustavo Paiva" required></label>
+          <label>Usuário<input id="newUsername" placeholder="Ex.: gustavo" required></label>
+          <label>Senha temporária<input id="newPassword" type="password" minlength="8" placeholder="Mínimo 8 caracteres" required></label>
+          <button class="primary" type="submit">Criar usuário</button>
+        </form>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div id="modal" class="modal hidden" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head"><div><h3 id="modalTitle">Novo ativo</h3><p id="modalSubtitle">Cadastre um novo item no inventário</p></div><button id="closeModal" type="button" aria-label="Fechar">×</button></div>
+    <div id="assetSummary" class="asset-summary hidden"></div>
+    <div class="form-note"><b>Cadastro de ativo:</b> escolha o tipo e a área. Campos técnicos aparecem somente para computadores.</div>
+    <form id="assetForm">
+      <input type="hidden" id="assetId">
+      <div class="form-grid"></div>
+      <div class="modal-actions">
+        <button type="button" class="ghost hidden" id="moveBtn">Movimentar</button>
+        <button type="button" class="danger hidden" id="retireBtn">Dar baixa</button>
+        <button type="button" class="ghost" id="cancelBtn">Cancelar</button>
+        <button class="primary" type="submit">Salvar ativo</button>
+      </div>
+    </form>
+    <div id="history"></div>
+  </div>
+</div>
+
+<div id="moveModal" class="modal hidden" aria-hidden="true">
+  <div class="modal-card move-card" role="dialog" aria-modal="true" aria-labelledby="moveTitle">
+    <div class="modal-head"><div><h3 id="moveTitle">Movimentar ativo</h3><p>Registre para onde o equipamento foi e quem ficou responsável.</p></div><button id="closeMoveModal" type="button" aria-label="Fechar">×</button></div>
+    <form id="moveForm">
+      <div class="move-grid">
+        <label>Local / posição<input id="moveLocation" placeholder="Ex.: Unidade 01, Mesa 12"></label>
+        <label>Responsável<input id="moveOwner" placeholder="Ex.: Maria Silva"></label>
+        <label class="wide">Observação<textarea id="moveNote" rows="3" placeholder="Motivo ou detalhes da movimentação"></textarea></label>
+      </div>
+      <div class="modal-actions"><button type="button" class="ghost" id="cancelMoveBtn">Cancelar</button><button class="primary" type="submit">Registrar movimentação</button></div>
+    </form>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+<script src="/static/app.js?v=15"></script>
+</body>
+</html>
