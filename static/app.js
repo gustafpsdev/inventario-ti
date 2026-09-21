@@ -3,7 +3,7 @@ let options={}, currentCategory='', currentSpecial='', currentAsset=null;
 const canonical={
   category:['COMPUTADOR','IMPRESSORA','MONITOR','TABLET','PERIFÉRICO'],
   status:['ATIVO','EM USO','EM ESTOQUE','MANUTENÇÃO','QUARENTENA','BAIXADO'],
-  area:['FÁBRICA','VAREJO','ATACADO','E-COMMERCE','CAFÉ'],
+  area:['MATRIZ','FILIAL','REMOTO','ESTOQUE'],
   department:['COMERCIAL','DHO','RH','ESTÚDIO','MARKETING','ESTILO','FISCAL','DIRETORIA','FINANCEIRO','FACILITIES','EXPEDIÇÃO'],
   operating_system:['WINDOWS 10 PRO','WINDOWS 11 PRO','WINDOWS 11 HOME','LINUX','SEM SO'],
   ram:['4 GB DDR3','4 GB DDR4','8 GB DDR3','8 GB DDR4','8 GB DDR5','12 GB DDR4','16 GB DDR3','16 GB DDR4','16 GB DDR5','24 GB DDR4','24 GB DDR5','32 GB DDR4','32 GB DDR5','64 GB DDR4','64 GB DDR5'],
@@ -45,8 +45,8 @@ function fillFilters(){[['#catFilter','category'],['#areaFilter','area'],['#stat
 function navActive(btn){$$('nav button').forEach(b=>b.classList.remove('active')); if(btn)btn.classList.add('active')}
 $$('nav button').forEach(btn=>btn.onclick=()=>{
   navActive(btn);
-  if(btn.dataset.special==='GUIDE_SHOP'){
-    currentCategory='COMPUTADOR'; currentSpecial='GUIDE_SHOP'; showAssets('COMPUTADOR','GUIDE_SHOP');
+  if(btn.dataset.special==='FILIAL'){
+    currentCategory='COMPUTADOR'; currentSpecial='FILIAL'; showAssets('COMPUTADOR','FILIAL');
   }else if(btn.dataset.category){
     currentCategory=btn.dataset.category; currentSpecial=''; showAssets(currentCategory);
   }else if(btn.dataset.view==='dashboard'){
@@ -66,8 +66,8 @@ async function showAssets(category='',special=''){
   currentCategory=category||'';
   currentSpecial=special||'';
   const dedicated=Boolean(currentCategory||currentSpecial);
-  const title=currentSpecial==='GUIDE_SHOP'?'Guide Shop':(dedicated?titleCat(currentCategory):'Ativos');
-  const sub=currentSpecial==='GUIDE_SHOP'?'Computadores exclusivos das lojas Guide Shop':(dedicated?`Somente ${titleCat(currentCategory).toLowerCase()} do inventário`:'Consulta e gestão de todo o inventário');
+  const title=currentSpecial==='FILIAL'?'Filiais':(dedicated?titleCat(currentCategory):'Ativos');
+  const sub=currentSpecial==='FILIAL'?'Computadores cadastrados nas filiais':(dedicated?`Somente ${titleCat(currentCategory).toLowerCase()} do inventário`:'Consulta e gestão de todo o inventário');
   setView('assets',title,sub);
   const cat=$('#catFilter');
   if(cat){
@@ -78,8 +78,8 @@ async function showAssets(category='',special=''){
 }
 function titleCat(c){return {'COMPUTADOR':'Computadores','IMPRESSORA':'Impressoras','MONITOR':'Monitores','TABLET':'Tablets','PERIFÉRICO':'Periféricos','QUARENTENA':'Quarentena'}[c]||c}
 function assetTableLayout(category,special=''){
-  if(special==='GUIDE_SHOP') return {
-    head:['ID','Loja','Modelo','Serial','Processador','RAM','Armazenamento','Sistema','Hostname','Status'],
+  if(special==='FILIAL') return {
+    head:['ID','Unidade','Modelo','Serial','Processador','RAM','Armazenamento','Sistema','Hostname','Status'],
     cells:r=>[r.asset_code,r.owner||r.location||r.area||'-',r.model||r.brand||'-',r.serial||'-',r.processor||'-',r.ram||'-',r.storage||'-',r.operating_system||'-',r.hostname||'-',badge(r.status)]
   };
   if(category==='COMPUTADOR') return {
@@ -87,7 +87,7 @@ function assetTableLayout(category,special=''){
     cells:r=>[r.asset_code,r.owner||'-',r.model||r.brand||'-',r.serial||'-',r.processor||'-',r.ram||'-',r.operating_system||'-',badge(r.status)]
   };
   if(category==='IMPRESSORA') return {
-    head:['ID','Modelo','Serial','Área / Loja','IP','Status'],
+    head:['ID','Modelo','Serial','Área / Local','IP','Status'],
     cells:r=>[r.asset_code,r.model||r.brand||'-',r.serial||'-',r.area||r.owner||'-',r.ip||'-',badge(r.status)]
   };
   if(category==='MONITOR') return {
@@ -95,7 +95,7 @@ function assetTableLayout(category,special=''){
     cells:r=>[r.asset_code,r.model||r.brand||'-',r.serial||'-',r.area||r.owner||'-',badge(r.status)]
   };
   if(category==='TABLET') return {
-    head:['ID','Loja / Colaborador','Modelo','Marca','Status'],
+    head:['ID','Local / Responsável','Modelo','Marca','Status'],
     cells:r=>[r.asset_code,r.owner||r.area||r.location||'-',r.model||'-',r.brand||'-',badge(r.status)]
   };
   return {
@@ -110,11 +110,11 @@ async function loadAssets(){
   const forcedCategory=currentCategory||'';
   const selectedCategory=!forcedCategory && $('#catFilter') ? $('#catFilter').value : '';
   if(forcedCategory)p.set('category',forcedCategory); else if(selectedCategory)p.set('category',selectedCategory);
-  if(currentSpecial==='GUIDE_SHOP') p.set('area','GUIDE SHOP');
+  if(currentSpecial==='FILIAL') p.set('area','FILIAL');
   else if($('#areaFilter').value)p.set('area',$('#areaFilter').value);
   if($('#statusFilter').value)p.set('status',$('#statusFilter').value);
   let rows=await api('/api/assets?'+p);
-  if(forcedCategory==='COMPUTADOR' && !currentSpecial) rows=rows.filter(r=>String(r.area||'').toUpperCase()!=='GUIDE SHOP');
+  if(forcedCategory==='COMPUTADOR' && !currentSpecial) rows=rows.filter(r=>String(r.area||'').toUpperCase()!=='FILIAL');
   const layout=assetTableLayout(forcedCategory||selectedCategory,currentSpecial);
   $('#assetHead').innerHTML=`<tr>${layout.head.map(h=>`<th>${esc(h)}</th>`).join('')}<th></th></tr>`;
   $('#assetRows').innerHTML=rows.map(r=>`<tr>${layout.cells(r).map((v,i)=>`<td>${i===0?'<b>'+esc(v)+'</b>':(String(v).startsWith('<span')?v:esc(v))}</td>`).join('')}<td><button class="icon-btn" onclick="openAsset(${r.id})" title="Abrir ativo">›</button></td></tr>`).join('')||`<tr><td colspan="${layout.head.length+1}">Nenhum ativo encontrado nesta categoria.</td></tr>`;
@@ -171,7 +171,7 @@ function updateCategoryFields(){
 }
 function updateAreaFields(){
   const area=$('#f_area')?.value||'';
-  const factory=area==='FÁBRICA';
+  const factory=area==='MATRIZ';
   const department=$('#f_department');
   const label=department?.closest('label');
   if(!department||!label)return;
@@ -251,7 +251,7 @@ $('#assetForm').onsubmit=async e=>{
     b.brand='';
     b.hostname='';
   }
-  if(b.area!=='FÁBRICA')b.department='';
+  if(b.area!=='MATRIZ')b.department='';
   if(b.category!=='COMPUTADOR'){
     b.operating_system='';
     b.processor='';
